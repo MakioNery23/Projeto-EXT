@@ -1,0 +1,6 @@
+node_modules
+dist
+.DS_Store
+backend/dados.json
+backend/dados.db
+backend/dados.db-*
