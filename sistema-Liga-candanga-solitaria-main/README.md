@@ -57,5 +57,5 @@ Regras de negócio (aplicadas no backend)
 - Só uma doação `Disponível` pode ser entregue, e a data da entrega não pode ser anterior ao recebimento da doação.
 - Uma doação só fica `Entregue` registrando uma entrega; enquanto tiver entrega, não pode mudar de status nem ter data de recebimento posterior à entrega.
 - Não é possível remover doação entregue nem beneficiário com entregas.
-- Remover uma entrega devolve a doação para `Disponível`.
+- Remover uma entrega devolve a doação para Disponível.
 
