@@ -32,24 +32,6 @@ frontend/
       Dashboard.jsx, Doacoes.jsx, Beneficiarios.jsx, Entregas.jsx
       configuracoes/   Área do administrador (editar/remover)
 
-| Método | Rota | O que faz |
-|---|---|---|
-| GET | `/api/doacoes` | Lista doações |
-| POST | `/api/doacoes` | Cadastra doação (nasce `Disponível`) |
-| PUT | `/api/doacoes/:id` | Edita doação |
-| DELETE | `/api/doacoes/:id` | Remove doação |
-| GET | `/api/beneficiarios` | Lista beneficiários |
-| POST | `/api/beneficiarios` | Cadastra beneficiário |
-| PUT | `/api/beneficiarios/:id` | Edita beneficiário |
-| DELETE | `/api/beneficiarios/:id` | Remove beneficiário |
-| GET | `/api/entregas` | Lista entregas |
-| POST | `/api/entregas` | Registra entrega (doação passa para `Entregue`) |
-| PUT | `/api/entregas/:id` | Edita entrega |
-| DELETE | `/api/entregas/:id` | Remove entrega (doação volta para `Disponível`) |
-| GET | `/api/resumo` | Totais do dashboard |
-| POST | `/api/sistema/restaurar-exemplo` | Substitui tudo pelos dados de exemplo |
-| POST | `/api/sistema/apagar-tudo` | Apaga todos os dados |
-
 Regras de negócio (aplicadas no backend)
 
 - Doação precisa de origem e de quantidade inteira maior que zero.
