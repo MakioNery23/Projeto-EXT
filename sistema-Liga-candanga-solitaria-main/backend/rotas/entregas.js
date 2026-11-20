@@ -8,7 +8,7 @@ function buscarEntrega(id) {
 }
 
 function buscarDoacao(id) {
-  return db.prepare('SELECT id, data, status FROM doacoes WHERE id = ?').get(id)
+  return db.prepare('SELECT id, quantidade, data, status FROM doacoes WHERE id = ?').get(id)
 }
 
 function beneficiarioExiste(id) {
@@ -20,14 +20,22 @@ router.get('/', (req, res) => {
 })
 
 router.post('/', (req, res) => {
-  const { doacaoId, beneficiarioId, data, responsavel } = req.body
+  const { doacaoId, beneficiarioId, quantidade, data, responsavel } = req.body
+  const qtd = Number(quantidade)
+
   if (!doacaoId || !beneficiarioId || !responsavel?.trim()) {
     return res.status(400).json({ erro: 'Selecione a doação, o beneficiário e informe o responsável.' })
   }
+  if (!Number.isInteger(qtd) || qtd <= 0) {
+    return res.status(400).json({ erro: 'Informe uma quantidade válida.' })
+  }
 
   const doacao = buscarDoacao(doacaoId)
-  if (!doacao || doacao.status !== 'Disponível') {
+  if (!doacao || doacao.status === 'Entregue') {
     return res.status(400).json({ erro: 'Esta doação não está disponível para entrega.' })
+  }
+  if (qtd > doacao.quantidade) {
+    return res.status(400).json({ erro: `Quantidade indisponível. Restam ${doacao.quantidade} un. nesta doação.` })
   }
   if (!beneficiarioExiste(beneficiarioId)) {
     return res.status(400).json({ erro: 'Beneficiário não encontrado.' })
@@ -36,11 +44,14 @@ router.post('/', (req, res) => {
     return res.status(400).json({ erro: `A data da entrega não pode ser anterior ao recebimento da doação (${doacao.data}).` })
   }
 
+  const novaQuantidade = doacao.quantidade - qtd
+  const novoStatus = novaQuantidade === 0 ? 'Entregue' : doacao.status === 'Reservada' ? 'Reservada' : 'Disponível'
+
   const id = transacao(() => {
     const { lastInsertRowid } = db
-      .prepare('INSERT INTO entregas (doacao_id, beneficiario_id, data, responsavel) VALUES (?, ?, ?, ?)')
-      .run(Number(doacaoId), Number(beneficiarioId), data, responsavel.trim())
-    db.prepare("UPDATE doacoes SET status = 'Entregue' WHERE id = ?").run(Number(doacaoId))
+      .prepare('INSERT INTO entregas (doacao_id, beneficiario_id, quantidade, data, responsavel) VALUES (?, ?, ?, ?, ?)')
+      .run(Number(doacaoId), Number(beneficiarioId), qtd, data, responsavel.trim())
+    db.prepare('UPDATE doacoes SET quantidade = ?, status = ? WHERE id = ?').run(novaQuantidade, novoStatus, Number(doacaoId))
     return lastInsertRowid
   })
   res.status(201).json(buscarEntrega(id))
@@ -75,7 +86,11 @@ router.delete('/:id', (req, res) => {
 
   transacao(() => {
     db.prepare('DELETE FROM entregas WHERE id = ?').run(entrega.id)
-    db.prepare("UPDATE doacoes SET status = 'Disponível' WHERE id = ?").run(entrega.doacaoId)
+    const doacao = buscarDoacao(entrega.doacaoId)
+    if (doacao) {
+      const novaQuantidade = doacao.quantidade + entrega.quantidade
+      db.prepare("UPDATE doacoes SET quantidade = ?, status = 'Disponível' WHERE id = ?").run(novaQuantidade, entrega.doacaoId)
+    }
   })
   res.status(204).end()
 })

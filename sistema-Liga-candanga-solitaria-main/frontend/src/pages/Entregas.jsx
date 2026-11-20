@@ -6,10 +6,11 @@ import { hojeLocal } from '../lib/datas'
 export function Entregas() {
   const { doacoes, beneficiarios, entregas, registrarEntrega } = useData()
 
-  const doacoesDisponiveis = doacoes.filter((d) => d.status === 'Disponível')
+  const doacoesDisponiveis = doacoes.filter((d) => d.status !== 'Entregue' && d.quantidade > 0)
 
   const [doacaoId, setDoacaoId] = useState('')
   const [beneficiarioId, setBeneficiarioId] = useState('')
+  const [quantidade, setQuantidade] = useState('')
   const [responsavel, setResponsavel] = useState('')
   const [data, setData] = useState(hojeLocal)
   const [erro, setErro] = useState('')
@@ -18,9 +19,15 @@ export function Entregas() {
 
   async function handleSubmit(evento) {
     evento.preventDefault()
-    if (!doacaoId || !beneficiarioId || !responsavel.trim()) return
+    if (!doacaoId || !beneficiarioId || !responsavel.trim() || !quantidade) return
 
-    const resultado = await registrarEntrega({ doacaoId, beneficiarioId, data, responsavel: responsavel.trim() })
+    const resultado = await registrarEntrega({
+      doacaoId,
+      beneficiarioId,
+      quantidade: Number(quantidade),
+      data,
+      responsavel: responsavel.trim(),
+    })
     if (resultado) {
       setErro(resultado)
       return
@@ -28,6 +35,7 @@ export function Entregas() {
     setErro('')
     setDoacaoId('')
     setBeneficiarioId('')
+    setQuantidade('')
     setResponsavel('')
   }
 
@@ -42,9 +50,17 @@ export function Entregas() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-5">
         <Field label="Doação disponível">
-          <select className={inputClass} value={doacaoId} onChange={(evento) => setDoacaoId(evento.target.value)} required>
+          <select
+            className={inputClass}
+            value={doacaoId}
+            onChange={(evento) => {
+              setDoacaoId(evento.target.value)
+              setQuantidade('')
+            }}
+            required
+          >
             <option value="" disabled>
               Selecione
             </option>
@@ -54,6 +70,17 @@ export function Entregas() {
               </option>
             ))}
           </select>
+        </Field>
+        <Field label={`Quantidade${doacaoSelecionada ? ` (máx ${doacaoSelecionada.quantidade})` : ''}`}>
+          <input
+            type="number"
+            min={1}
+            max={doacaoSelecionada?.quantidade || 1}
+            className={inputClass}
+            value={quantidade}
+            onChange={(evento) => setQuantidade(evento.target.value)}
+            required
+          />
         </Field>
         <Field label="Beneficiário">
           <select
@@ -72,7 +99,7 @@ export function Entregas() {
             ))}
           </select>
         </Field>
-        <Field label="Responsável pela entrega">
+        <Field label="Responsável">
           <input
             type="text"
             className={inputClass}
@@ -95,7 +122,7 @@ export function Entregas() {
             required
           />
         </Field>
-        <div className="sm:col-span-2 lg:col-span-4">
+        <div className="sm:col-span-2 lg:col-span-5">
           <button
             type="submit"
             disabled={doacoesDisponiveis.length === 0 || beneficiarios.length === 0}
@@ -111,11 +138,12 @@ export function Entregas() {
       </form>
 
       <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
-        <table className="w-full min-w-[32rem] text-left text-sm">
+        <table className="w-full min-w-[36rem] text-left text-sm">
           <thead>
             <tr className="border-b border-slate-200 text-slate-500">
               <th className="px-5 py-3 font-medium">Data</th>
               <th className="px-5 py-3 font-medium">Doação</th>
+              <th className="px-5 py-3 font-medium">Qtd. entregue</th>
               <th className="px-5 py-3 font-medium">Beneficiário</th>
               <th className="px-5 py-3 font-medium">Responsável</th>
             </tr>
@@ -128,8 +156,9 @@ export function Entregas() {
                 <tr key={entrega.id}>
                   <td className="px-5 py-3 text-slate-600">{entrega.data}</td>
                   <td className="px-5 py-3 text-slate-900">
-                    {doacao ? `${doacao.categoria} · ${doacao.quantidade} un.` : '—'}
+                    {doacao ? `${doacao.categoria} · ${doacao.origem}` : '—'}
                   </td>
+                  <td className="px-5 py-3 text-slate-600">{entrega.quantidade} un.</td>
                   <td className="px-5 py-3 text-slate-900">{beneficiario?.nome ?? '—'}</td>
                   <td className="px-5 py-3 text-slate-600">{entrega.responsavel}</td>
                 </tr>
@@ -137,7 +166,7 @@ export function Entregas() {
             })}
             {entregasOrdenadas.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-5 py-6 text-center text-slate-400">
+                <td colSpan={5} className="px-5 py-6 text-center text-slate-400">
                   Nenhuma entrega registrada ainda.
                 </td>
               </tr>

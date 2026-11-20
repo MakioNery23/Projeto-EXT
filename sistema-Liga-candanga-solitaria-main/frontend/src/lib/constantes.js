@@ -1,3 +1,5 @@
+export const API = '/api'
+
 export const CATEGORIAS_DOACAO = ['Cesta básica', 'Bola', 'Rede', 'Troféu', 'Uniforme']
 
 export const STATUS_DOACAO = ['Disponível', 'Reservada', 'Entregue']

@@ -1,3 +1,4 @@
+import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
@@ -15,7 +16,7 @@ export const SQL_DOACOES = 'SELECT id, categoria, quantidade, origem, data, stat
 export const SQL_BENEFICIARIOS =
   'SELECT id, nome, tipo, regiao, contato, necessidade, data_cadastro AS dataCadastro FROM beneficiarios'
 export const SQL_ENTREGAS =
-  'SELECT id, doacao_id AS doacaoId, beneficiario_id AS beneficiarioId, data, responsavel FROM entregas'
+  'SELECT id, doacao_id AS doacaoId, beneficiario_id AS beneficiarioId, quantidade, data, responsavel FROM entregas'
 
 export function transacao(funcao) {
   db.exec('BEGIN')
@@ -59,16 +60,37 @@ export function carregarExemplo() {
     }
 
     const inserirEntrega = db.prepare(
-      'INSERT INTO entregas (id, doacao_id, beneficiario_id, data, responsavel) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO entregas (id, doacao_id, beneficiario_id, quantidade, data, responsavel) VALUES (?, ?, ?, ?, ?, ?)',
     )
     for (const e of SEED_ENTREGAS) {
-      inserirEntrega.run(e.id, e.doacaoId, e.beneficiarioId, e.data, e.responsavel)
+      inserirEntrega.run(e.id, e.doacaoId, e.beneficiarioId, e.quantidade, e.data, e.responsavel)
     }
   })
+}
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS usuarios (
+    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome     TEXT NOT NULL,
+    email    TEXT NOT NULL UNIQUE,
+    senha    TEXT NOT NULL,
+    papel    TEXT NOT NULL DEFAULT 'usuario'
+  )
+`)
+
+export function hashSenha(senha) {
+  return crypto.createHash('sha256').update(senha).digest('hex')
 }
 
 const jaIniciado = db.prepare("SELECT valor FROM controle WHERE chave = 'iniciado'").get()
 if (!jaIniciado) {
   carregarExemplo()
   db.prepare("INSERT INTO controle (chave, valor) VALUES ('iniciado', 'sim')").run()
+}
+
+const adminExiste = db.prepare("SELECT id FROM usuarios WHERE email = 'admin@liga.com'").get()
+if (!adminExiste) {
+  db.prepare(
+    'INSERT INTO usuarios (nome, email, senha, papel) VALUES (?, ?, ?, ?)'
+  ).run('Administrador', 'admin@liga.com', hashSenha('liga2026'), 'admin')
 }

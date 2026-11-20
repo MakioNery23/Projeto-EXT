@@ -1,5 +1,6 @@
 import express from 'express'
 import path from 'node:path'
+import auth from './rotas/auth.js'
 import beneficiarios from './rotas/beneficiarios.js'
 import doacoes from './rotas/doacoes.js'
 import entregas from './rotas/entregas.js'
@@ -11,6 +12,7 @@ const PORTA = process.env.PORT || 3000
 
 app.use(express.json())
 
+app.use('/api/auth', auth)
 app.use('/api/doacoes', doacoes)
 app.use('/api/beneficiarios', beneficiarios)
 app.use('/api/entregas', entregas)

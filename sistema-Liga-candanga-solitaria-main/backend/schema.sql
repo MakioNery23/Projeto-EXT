@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS doacoes (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   categoria   TEXT NOT NULL,
-  quantidade  INTEGER NOT NULL CHECK (quantidade > 0),
+  quantidade  INTEGER NOT NULL CHECK (quantidade >= 0),
   origem      TEXT NOT NULL,
   data        TEXT NOT NULL,
   status      TEXT NOT NULL DEFAULT 'Disponível'
@@ -20,8 +20,9 @@ CREATE TABLE IF NOT EXISTS beneficiarios (
 
 CREATE TABLE IF NOT EXISTS entregas (
   id               INTEGER PRIMARY KEY AUTOINCREMENT,
-  doacao_id        INTEGER NOT NULL UNIQUE REFERENCES doacoes(id),
+  doacao_id        INTEGER NOT NULL REFERENCES doacoes(id),
   beneficiario_id  INTEGER NOT NULL REFERENCES beneficiarios(id),
+  quantidade       INTEGER NOT NULL CHECK (quantidade > 0),
   data             TEXT NOT NULL,
   responsavel      TEXT NOT NULL
 );
